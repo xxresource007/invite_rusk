@@ -36,9 +36,9 @@ void main() async {
   // 初始化插件
   await FzInviteKit.initialize(
     config: InviteConfig(
-      channelName: 'com.funzonic.invitedemo/invite',
-      schemes: ['wclinksdemo', 'myapp'], // 自定义 URL Scheme
-      domains: ['funzonic.com'], // Universal Links 域名
+      channelName: 'com..invitedemo/invite',
+      schemes: ['', 'myapp'], // 自定义 URL Scheme
+      domains: ['.com'], // Universal Links 域名
       validPaths: ['/invite_test/invite/', '/invite/', '/i/'], // 有效路径
       deferredLinkExpiryDays: 7, // 延迟链接有效期(天)
     ),
@@ -63,7 +63,7 @@ void main() async {
     <key>CFBundleTypeRole</key>
     <string>Editor</string>
     <key>CFBundleURLName</key>
-    <string>com.funzonic.invitedemo</string>
+    <string>com..invitedemo</string>
     <key>CFBundleURLSchemes</key>
     <array>
       <string>wclinksdemo</string>
@@ -78,7 +78,7 @@ void main() async {
 1. 在 Xcode 中打开项目
 2. 选择 Target → Signing & Capabilities
 3. 添加 "Associated Domains"
-4. 添加域名: `applinks:funzonic.com`
+4. 添加域名: `applinks:.com`
 
 #### 简化 AppDelegate.swift:
 
@@ -101,12 +101,12 @@ import UIKit
 ## 支持的 URL 格式
 
 ### Universal Links (需要配置 Associated Domains)
-- `https://funzonic.com/invite/ABC123`
-- `https://funzonic.com/i/ABC123`
-- `https://funzonic.com/invite_test/invite/ABC123`
+- `https://.com/invite/ABC123`
+- `https://.com/i/ABC123`
+- `https://.com/invite_test/invite/ABC123`
 
 ### 自定义 Scheme
-- `wclinksdemo://invite?code=ABC123`
+- `://invite?code=ABC123`
 - `myapp://invite/ABC123`
 
 ## 注意事项
