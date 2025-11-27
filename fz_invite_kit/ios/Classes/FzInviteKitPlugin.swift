@@ -223,8 +223,41 @@ extension FzInviteKitPlugin {
     UserDefaults.standard.set(code, forKey: "deferred_invite_code")
     UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "deferred_invite_timestamp")
     
+    // 显示弹框
+    showInviteCodeAlert(code)
+    
     // 发送到 Flutter
     sendInviteCodeToFlutter(code)
+  }
+  
+  private func showInviteCodeAlert(_ code: String) {
+    // 获取根视图控制器
+    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+          let rootViewController = windowScene.windows.first?.rootViewController else {
+      print("⚠️ 无法获取根视图控制器")
+      return
+    }
+    
+    // 创建弹框
+    let alert = UIAlertController(
+      title: "🎉 邀请码获取成功",
+      message: "邀请码: \(code)",
+      preferredStyle: .alert
+    )
+    
+    // 添加确定按钮
+    alert.addAction(UIAlertAction(title: "确定", style: .default, handler: nil))
+    
+    // 显示弹框 - 在主线程执行
+    DispatchQueue.main.async {
+      // 如果当前有正在展示的控制器,则在其上展示
+      var topController = rootViewController
+      while let presented = topController.presentedViewController {
+        topController = presented
+      }
+      topController.present(alert, animated: true, completion: nil)
+      print("✅ 已显示邀请码弹框")
+    }
   }
   
   private func sendInviteCodeToFlutter(_ code: String) {
