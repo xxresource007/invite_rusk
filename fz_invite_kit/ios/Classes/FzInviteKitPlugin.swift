@@ -119,34 +119,64 @@ extension FzInviteKitPlugin {
     
     var code: String = ""
     
-    // 情况1: Universal Links (https)
-    if url.scheme?.lowercased() == "https" || url.scheme?.lowercased() == "http" {
+    // ==================== 1. Universal Links (https/http) ====================
+    if let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http" {
       guard let host = url.host?.lowercased(),
             validDomains.contains(where: { host.contains($0) }) else {
-        print("⚠️ https 域名不匹配")
+        print("⚠️ https 域名不匹配: \(url.host ?? "无")")
         return
       }
       
-      let path = url.path.lowercased()
-      guard validPaths.contains(where: path.contains) else {
-        print("⚠️ https 路径不匹配: \(path)")
-        return
-      }
-      
-      code = url.lastPathComponent.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-    }
-    
-    // 情况2: 自定义 scheme
-    else if let scheme = url.scheme?.lowercased(), validSchemes.contains(scheme) {
-      // 优先取 query 参数
+      // 情况 A: ?code=LQSF9UK2 (标准 query 参数)
       if let queryCode = url.queryParameters["code"], !queryCode.isEmpty {
         code = queryCode
-      } else {
+        print("📍 从标准查询参数提取: ?code=\(code)")
+      }
+      // 情况 B: /invite/LQSF9UK2 或 /i/LQSF9UK2 (路径形式)
+      else if url.path.range(of: "/invite", options: .caseInsensitive) != nil ||
+              url.path.range(of: "/i/", options: .caseInsensitive) != nil {
+        let raw = url.lastPathComponent
+        code = raw.replacingOccurrences(of: "^/*", with: "", options: .regularExpression)
+                  .replacingOccurrences(of: "/*$", with: "", options: .regularExpression)
+        print("📍 从路径提取: \(url.path) -> \(code)")
+      }
+      // 情况 C: ?LQSF9UK2 (裸 query，当前线上格式)
+      else if let query = url.query, !query.isEmpty {
+        // 如果有 query 但解析不出 key-value，说明是直接把码塞在 ? 后面
+        let nakedCode = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !nakedCode.isEmpty {
+          code = nakedCode
+          print("📍 从裸查询字符串提取: ?\(code)")
+        }
+      }
+      // 情况 D: 路径验证（如果配置了 validPaths）
+      else if !validPaths.isEmpty {
+        let path = url.path.lowercased()
+        guard validPaths.contains(where: { path.contains($0.lowercased()) }) else {
+          print("⚠️ https 路径不匹配: \(path)")
+          return
+        }
         code = url.lastPathComponent.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        print("📍 从路径组件提取: \(code)")
       }
     }
     
-    // 最终检查
+    // ==================== 2. 自定义 Scheme ====================
+    else if let scheme = url.scheme?.lowercased(), validSchemes.contains(scheme) {
+      // 优先取 query 参数 ?code=XXX
+      if let queryCode = url.queryParameters["code"], !queryCode.isEmpty {
+        code = queryCode
+        print("📍 从自定义 Scheme 查询参数提取: \(scheme)://...?code=\(code)")
+      }
+      // 回退到 host 或 lastPathComponent
+      else {
+        code = url.host ?? url.lastPathComponent
+        code = code.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        print("📍 从自定义 Scheme 路径提取: \(scheme):// -> \(code)")
+      }
+    }
+    
+    // ==================== 最终检查 ====================
     guard !code.isEmpty else {
       print("⚠️ 没有提取到邀请码")
       return
